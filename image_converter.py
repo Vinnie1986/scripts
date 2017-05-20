@@ -1,21 +1,21 @@
+import argparse
+import os
 from collections import OrderedDict
 from collections import defaultdict
 
-from PIL import ImageOps
+from PIL import ImageOps, Image
 from pandas import DataFrame
 
+import hilbert
 
-def convert():
-    from PIL import Image
-    im = Image.open(r"C:\Users\vincentc.PHY\Desktop\kurt\p2\body_100px_15_colours.png").convert(
-        'RGB')  # Can be many different formats.
+def get_image(input_file):
+    im = Image.open(input_file).convert('RGB')  # Can be many different formats.
     im = ImageOps.mirror(im)
     im = im.transpose(Image.ROTATE_90)
-    pix = im.load()
-    color_dict = OrderedDict()
-    counter = 0
-    color_counter = defaultdict(int)
-    dataframe = DataFrame(index=range(im.size[0]), columns=range(im.size[1]))
+    return im
+
+
+def print_image(im, dataframe, color_dict, counter = 0):
     print 'printing image : '
     for i in range(im.size[0]):
         for j in range(im.size[1]):
@@ -35,16 +35,35 @@ def convert():
     for k, v in color_dict.iteritems():
         print '{: >20} {: >20} {: >20} {: >20} {: >20}'.format(k[0], k[1], k[2], v, color_counter[k])
 
-    import collections
+def convert():
+    parser = argparse.ArgumentParser(description='Convert files to API request objects')
+    parser.add_argument('--input_file', dest='input_file', required=True, type=str, help='path to the file')
+    args = parser.parse_args()
+    input_file = args.input_file
+    file_name, ext = os.path.splitext(input_file)
+
+    im = get_image(input_file)
+
+    pix = im.load()
+    color_dict = OrderedDict()
+    counter = 0
+    color_counter = defaultdict(int)
+    dataframe = DataFrame(index=range(im.size[0]), columns=range(im.size[1]))
+
+    print_image(im, color_dict, counter = 0)
+
+
     # color_dict = sorted(color_dict)
-    sorted_color_dict = collections.OrderedDict(sorted(color_dict.items(), reverse=True))
+    # sorted_color_dict = collections.OrderedDict(sorted(color_dict.items(), reverse=True))
+    sorted_color_dict = color_dict.items().sort(
+        key=lambda (r, g, b): hilbert.Hilbert_to_int([int(r * 255), int(g * 255), int(b * 255)]))
+
     dataframe = dataframe.applymap(lambda x: x * -1)
     for i, number in enumerate(sorted_color_dict.values(), start=1):
         dataframe = dataframe.applymap(lambda x: i if x * -1 == number else x)
 
-    dataframe.to_csv(r"C:\Users\vincentc.PHY\Desktop\kurt\p2\body_100px_15_colours.csv", index=False, header=False,
+    dataframe.to_csv(file_name + '.csv', index=False, header=False,
                      sep=';')
-    from PIL import Image
 
     number_of_colours = len(sorted_color_dict)
     LENGTH_SQUARE_SIDE = 50
@@ -60,8 +79,8 @@ def convert():
             if i != 0 and i % LENGTH_SQUARE_SIDE == 0:
                 counter += 1
 
-    im.save(r"C:\Users\vincentc.PHY\Desktop\kurt\p2\body_100px_15_colours_converter.png", "PNG")
+    im.save(file_name + '_sorted_colours' + '.png', "PNG")
 
 
 if __name__ == '__main__':
-    pass
+    convert()
