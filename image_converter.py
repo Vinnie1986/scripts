@@ -201,4 +201,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Convert files to API request objects')
     parser.add_argument('--input_file', dest='input_file', required=True, type=str, help='path to the file')
     args = parser.parse_args()
-    convert()
+    convert(args)

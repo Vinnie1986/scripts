@@ -8,4 +8,4 @@ if __name__ == '__main__':
 
     for file in os.listdir(args.folder):
         setattr(args, 'input_file' ,os.path.join(args.folder, file))
-git         convert(args)
+        convert(args)
